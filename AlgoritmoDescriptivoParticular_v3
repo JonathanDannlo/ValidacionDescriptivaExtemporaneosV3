@@ -1,0 +1,68 @@
+import os
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import scipy.stats as stats
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+
+# Carga de datos al DataFrame
+file_path = "/content/EstudiantesExtemporaneos2024-1.xlsx"
+if not os.path.isfile(file_path):
+  raise FileNotFoundError(f"{file_path} not found.")
+piam20241 = pd.read_excel(file_path)
+
+# Reemplazar valores vacíos y espacios en blanco por cero en la columna 'ESTRATO' y ordenar el estrato
+piam20241["ESTRATO"] = piam20241["ESTRATO"].replace([' ', ''], 0)
+piam20241["ESTRATO"] = piam20241["ESTRATO"].astype(int)
+estrato = piam20241['ESTRATO'].value_counts().sort_index()
+
+# Regresion lineal
+# Y = b0 + b1X
+#Constructor del objeto de regresión lineal
+lm = LinearRegression()
+# Definicion de la variable predictoria y la variable objetivo
+X = piam20241[["ESTRATO"]]
+y = piam20241["DERECHOS_MATRICULA"]
+# Ajuste del modelo
+lm.fit(X, y)
+# Obtencion de una predicion
+yHat = lm.predict(X)
+# Obtencion de los coeficientes
+# Interrsecion b0
+b = lm.intercept_
+# Pendiente b1
+m = lm.coef_
+
+# Agregar predicciones al DataFrame
+piam20241["Predicciones"] = yHat
+
+# Ordenar el DataFrame por las predicciones
+piam20241_ordenado = piam20241.sort_values(by="Predicciones")
+
+# Obtención de los coeficientes
+# Intersección b0
+b = lm.intercept_
+# Pendiente b1
+m = lm.coef_
+
+print(f"Intersección (b0): {b}")
+print(f"Pendiente (b1): {m}")
+print(f"Predicciones ordenadas:")
+print(piam20241_ordenado[["ESTRATO", "DERECHOS_MATRICULA", "Predicciones"]])
+
+sns.regplot(x="ESTRATO", y="DERECHOS_MATRICULA", data=piam20241)
+#plt.ylim(0,)
+plt.title("Regresion lineal")
+plt.xlabel("Estrato")
+plt.ylabel("Derechos de Matrícula")
+plt.show()
+
+sns.residplot(x="ESTRATO", y="DERECHOS_MATRICULA", data=piam20241)
+plt.title("Residual plot")
+plt.xlabel("Estrato")
+plt.ylabel("Derechos de Matrícula")
+plt.show()
+
+ax1 = sns.distplot(piam20241["DERECHOS_MATRICULA"], hist=False, color="r", label="Derechos de Matrícula")
+sns.distplot(piam20241["Predicciones"], hist=False, color="b", label="Predicciones", ax=ax1)
